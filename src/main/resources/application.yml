@@ -1,0 +1,7 @@
+mailserver:
+  username: henning@localhost
+  password: asdf079aszudfhl
+  pop3:
+    port: 10110
+  smtp:
+    port: 10025

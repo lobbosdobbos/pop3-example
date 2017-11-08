@@ -2,6 +2,7 @@ package com.axa.ecmca.mail.pop3example;
 
 import com.icegreen.greenmail.util.GreenMail;
 import com.icegreen.greenmail.util.ServerSetup;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -22,6 +23,18 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableTransactionManagement
 public class Pop3ExampleApplication {
 
+    @Value("${mailserver.username}")
+    String userName;
+
+    @Value("${mailserver.password}")
+    String password;
+
+    @Value("${mailserver.pop3.port}")
+    int pop3Port;
+
+    @Value("${mailserver.smtp.port}")
+    int smtpPort;
+
     public static void main(String[] args) {
         SpringApplication.run(Pop3ExampleApplication.class, args);
     }
@@ -29,8 +42,8 @@ public class Pop3ExampleApplication {
     @Bean
     public PlatformTransactionManager platformTransactionManager() {
         return new PseudoTransactionManager();
-
     }
+
     @Bean
     public TransactionSynchronizationFactory transactionSynchronizationFactory() {
         return new DefaultTransactionSynchronizationFactory(new Pop3TransactionSynchronizationProcessor());
@@ -38,22 +51,22 @@ public class Pop3ExampleApplication {
 
     @Bean
     public ServerSetup smtpServerSetup() {
-        return new ServerSetup(10025, "localhost", ServerSetup.PROTOCOL_SMTP);
+        return new ServerSetup(smtpPort, "localhost", ServerSetup.PROTOCOL_SMTP);
     }
 
     @Bean
     public GreenMail greenMail() {
-        ServerSetup pop3Config = new ServerSetup(10110, "localhost", ServerSetup.PROTOCOL_POP3);
-        pop3Config.setServerStartupTimeout(5000);
-        GreenMail greenMail = new GreenMail(new ServerSetup[]{pop3Config, smtpServerSetup()});
+        ServerSetup pop3ServerSetup = new ServerSetup(pop3Port, "localhost", ServerSetup.PROTOCOL_POP3);
+        pop3ServerSetup.setServerStartupTimeout(5000);
+        GreenMail greenMail = new GreenMail(new ServerSetup[]{pop3ServerSetup, smtpServerSetup()});
         greenMail.start();
-        greenMail.setUser("user", "password");
+        greenMail.setUser(userName, password);
         return greenMail;
     }
 
     @Bean
     public Pop3MailReceiver pop3MailReceiver() {
-        return new Pop3MailReceiver("pop3://user:password@localhost:10110/INBOX");
+        return new Pop3MailReceiver("localhost", pop3Port, userName, password);
     }
 
     @Bean
@@ -77,6 +90,6 @@ public class Pop3ExampleApplication {
     @Bean
     public MessageHandler messageHandler() {
         return System.out::println;
-
     }
+
 }
