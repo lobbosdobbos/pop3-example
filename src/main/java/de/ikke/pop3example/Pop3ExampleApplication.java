@@ -1,4 +1,4 @@
-package com.axa.ecmca.mail.pop3example;
+package de.ikke.pop3example;
 
 import com.icegreen.greenmail.util.GreenMail;
 import com.icegreen.greenmail.util.ServerSetup;

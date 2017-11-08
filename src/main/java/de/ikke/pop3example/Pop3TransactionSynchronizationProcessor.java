@@ -1,4 +1,4 @@
-package com.axa.ecmca.mail.pop3example;
+package de.ikke.pop3example;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.integration.transaction.IntegrationResourceHolder;
