@@ -8,14 +8,15 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlows;
-import org.springframework.integration.dsl.core.PollerSpec;
 import org.springframework.integration.dsl.core.Pollers;
 import org.springframework.integration.mail.MailReceivingMessageSource;
 import org.springframework.integration.mail.Pop3MailReceiver;
+import org.springframework.integration.scheduling.PollerMetadata;
 import org.springframework.integration.transaction.DefaultTransactionSynchronizationFactory;
 import org.springframework.integration.transaction.PseudoTransactionManager;
 import org.springframework.integration.transaction.TransactionSynchronizationFactory;
 import org.springframework.messaging.MessageHandler;
+import org.springframework.scheduling.support.PeriodicTrigger;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
@@ -69,20 +70,18 @@ public class Pop3ExampleApplication {
         return new Pop3MailReceiver("localhost", pop3Port, userName, password);
     }
 
-    @Bean
-    MailReceivingMessageSource mailReceivingMessageSource() {
+    public MailReceivingMessageSource mailReceivingMessageSource() {
         return new MailReceivingMessageSource(pop3MailReceiver());
     }
 
     @Bean
     public IntegrationFlow integrationFlow() {
         return IntegrationFlows.from(mailReceivingMessageSource(),
-                c -> {
-                    PollerSpec pollerSpec = Pollers.fixedRate(100);
-                    pollerSpec.transactional();
-                    pollerSpec.transactionSynchronizationFactory(transactionSynchronizationFactory());
-                    c.poller(pollerSpec.maxMessagesPerPoll(1));
-                })
+                c -> c.poller(Pollers
+                        .fixedRate(10)
+                        .transactional()
+                        .transactionSynchronizationFactory(transactionSynchronizationFactory())
+                        .maxMessagesPerPoll(1)))
                 .handle(messageHandler())
                 .get();
     }
