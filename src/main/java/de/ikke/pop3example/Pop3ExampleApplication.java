@@ -70,6 +70,7 @@ public class Pop3ExampleApplication {
         return new Pop3MailReceiver("localhost", pop3Port, userName, password);
     }
 
+    @Bean
     public MailReceivingMessageSource mailReceivingMessageSource() {
         return new MailReceivingMessageSource(pop3MailReceiver());
     }
