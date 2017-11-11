@@ -6,7 +6,6 @@ import org.springframework.integration.transaction.TransactionSynchronizationPro
 
 import javax.mail.*;
 import javax.mail.internet.MimeMessage;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -36,27 +35,12 @@ public class Pop3TransactionSynchronizationProcessor implements TransactionSynch
                 contentsProfile.add(FetchProfile.Item.FLAGS);
                 folder.fetch(messages, contentsProfile);
 
-                Predicate<MimeMessage> messageIdIsEqual = msg -> {
-                    try {
-                        return msg.getMessageID().equals(messageId);
-                    } catch (MessagingException e) {
-                        throw new RuntimeException(e);
-                    }
-                };
-                Consumer<MimeMessage> deleteMessage = msg -> {
-                    try {
-                        msg.setFlag(Flags.Flag.DELETED, true);
-                    } catch (MessagingException e) {
-                        log.error("Could not set DELETED flag on mime message", e);
-                    }
-                };
-
                 Stream.of(messages)
                         .filter(msg -> msg instanceof MimeMessage)
                         .map(msg -> (MimeMessage) msg)
-                        .filter(messageIdIsEqual)
+                        .filter(messageIdIsEqualTo(messageId))
                         .findFirst()
-                        .ifPresent(deleteMessage);
+                        .ifPresent(this::deleteMessage);
 
                 folder.close(true);
             } catch (Exception e) {
@@ -69,4 +53,23 @@ public class Pop3TransactionSynchronizationProcessor implements TransactionSynch
     public void processAfterRollback(IntegrationResourceHolder integrationResourceHolder) {
         log.debug("afterRollback");
     }
+
+    private Predicate<MimeMessage> messageIdIsEqualTo(String messageId) {
+        return msg -> {
+                        try {
+                            return msg.getMessageID().equals(messageId);
+                        } catch (MessagingException e) {
+                            throw new RuntimeException(e);
+                        }
+                    };
+    }
+
+    private void deleteMessage(MimeMessage msg) {
+        try {
+            msg.setFlag(Flags.Flag.DELETED, true);
+        } catch (MessagingException e) {
+            log.error("Could not set DELETED flag on mime message", e);
+        }
+    }
+
 }
